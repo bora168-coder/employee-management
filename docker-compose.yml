@@ -1,0 +1,48 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: employee_php_app
+    ports:
+      - "8080:80"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: exam_db
+      DB_USER: app_user
+      DB_PASSWORD: secret123
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - employee_network
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: employee_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootsecret123
+      MYSQL_DATABASE: exam_db
+      MYSQL_USER: app_user
+      MYSQL_PASSWORD: secret123
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - employee_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -prootsecret123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+networks:
+  employee_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
