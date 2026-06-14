@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: php-config
+data:
+  DB_HOST: mysql
+  DB_PORT: "3306"
+  DB_NAME: exam_db
