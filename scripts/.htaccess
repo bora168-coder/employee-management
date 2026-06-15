@@ -1,0 +1,4 @@
+# Security: deny all web access to this directory.
+# Scripts here are CLI-only administrative utilities.
+Order Deny,Allow
+Deny from all

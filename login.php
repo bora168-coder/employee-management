@@ -6,21 +6,43 @@ if (is_authenticated()) {
     exit;
 }
 
-$errors = [];
+$errors   = [];
 $username = trim($_POST['username'] ?? '');
 
+// Brute-force protection: max 10 attempts per 15-minute window per session.
+const LOGIN_MAX_ATTEMPTS = 10;
+const LOGIN_WINDOW_SECS  = 900;
+
+$now            = time();
+$loginAttempts  = $_SESSION['login_attempts']  ?? 0;
+$loginWindowEnd = $_SESSION['login_window_end'] ?? ($now + LOGIN_WINDOW_SECS);
+
+if ($now > $loginWindowEnd) {
+    $loginAttempts  = 0;
+    $loginWindowEnd = $now + LOGIN_WINDOW_SECS;
+}
+
+$rateLimited = ($loginAttempts >= LOGIN_MAX_ATTEMPTS);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
+    if ($rateLimited) {
+        $errors[] = 'Too many failed attempts. Please wait a few minutes before trying again.';
+    } elseif (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
         $errors[] = 'Invalid security token. Please try again.';
     } elseif ($username === '' || trim($_POST['password'] ?? '') === '') {
         $errors[] = 'Username and password are required.';
-    } elseif (strlen(trim($_POST['password'] ?? '')) < 6) {
-        $errors[] = 'Invalid login. Check your credentials and try again.';
     } else {
-        // TODO: Replace this temporary credential check with a users table or identity provider.
-        login_user($username);
-        header('Location: dashboard.php');
-        exit;
+        require_once 'db.php';
+        if (authenticate_user($username, trim($_POST['password'] ?? ''))) {
+            // Reset counter on successful login.
+            unset($_SESSION['login_attempts'], $_SESSION['login_window_end']);
+            header('Location: dashboard.php');
+            exit;
+        }
+        $loginAttempts++;
+        $_SESSION['login_attempts']  = $loginAttempts;
+        $_SESSION['login_window_end'] = $loginWindowEnd;
+        $errors[] = 'Invalid username or password. Please try again.';
     }
 }
 ?>

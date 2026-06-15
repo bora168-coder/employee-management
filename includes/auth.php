@@ -49,25 +49,63 @@ function require_auth(): void {
     }
 }
 
-function login_user(string $username): void {
+function authenticate_user(string $username, string $password): bool {
+    global $pdo;
+    if (!isset($pdo)) { require_once __DIR__ . '/../db.php'; }
+    if ($username === '' || $password === '') {
+        return false;
+    }
+
+    $stmt = $pdo->prepare(
+        'SELECT id, username, password, full_name, role, status FROM users WHERE username = ? LIMIT 1'
+    );
+    $stmt->execute([$username]);
+    $user = $stmt->fetch();
+
+    if (!$user) {
+        return false;
+    }
+    if ($user['status'] !== 'Active') {
+        return false;
+    }
+    if (!password_verify($password, $user['password'])) {
+        return false;
+    }
+
+    $upd = $pdo->prepare('UPDATE users SET last_login = NOW() WHERE id = ?');
+    $upd->execute([$user['id']]);
+
+    login_user_from_record($user);
+    return true;
+}
+
+function login_user_from_record(array $user): void {
     session_regenerate_id(true);
     $_SESSION['user'] = [
-        'name' => 'S. Rathana',
-        'role' => 'Executive Director',
-        'username' => $username,
+        'id'       => $user['id'],
+        'name'     => $user['full_name'],
+        'role'     => $user['role'],
+        'username' => $user['username'],
     ];
     $_SESSION['access_expires_at'] = time() + ACCESS_TOKEN_TTL;
 
     $refreshToken = bin2hex(random_bytes(32));
-    $_SESSION['refresh_token_hash'] = hash('sha256', $refreshToken);
-    $_SESSION['refresh_expires_at'] = time() + REFRESH_TOKEN_TTL;
+    $_SESSION['refresh_token_hash']  = hash('sha256', $refreshToken);
+    $_SESSION['refresh_expires_at']  = time() + REFRESH_TOKEN_TTL;
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (getenv('APP_ENV') === 'production');
     setcookie('govlink_refresh', $refreshToken, [
-        'expires' => time() + REFRESH_TOKEN_TTL,
-        'path' => '/',
+        'expires'  => time() + REFRESH_TOKEN_TTL,
+        'path'     => '/',
         'httponly' => true,
+        'secure'   => $isHttps,
         'samesite' => 'Lax',
     ]);
 }
+
+// REMOVED: login_user() — that function bypassed all credential checks and
+// hardcoded a fixed identity. It has been deleted. All logins must go through
+// authenticate_user() which calls login_user_from_record().
 
 function logout_user(): void {
     $_SESSION = [];
@@ -75,14 +113,23 @@ function logout_user(): void {
         $params = session_get_cookie_params();
         setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
     }
-    setcookie('govlink_refresh', '', time() - 42000, '/');
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (getenv('APP_ENV') === 'production');
+    setcookie('govlink_refresh', '', [
+        'expires'  => time() - 42000,
+        'path'     => '/',
+        'httponly' => true,
+        'secure'   => $isHttps,
+        'samesite' => 'Lax',
+    ]);
     session_destroy();
 }
 
 function current_user(): array {
     return $_SESSION['user'] ?? [
-        'name' => 'Admin HQ',
-        'role' => 'Administrator',
+        'id'       => 0,
+        'name'     => 'Guest',
+        'role'     => 'Read-only',
         'username' => '',
     ];
 }
