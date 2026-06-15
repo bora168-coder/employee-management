@@ -1,6 +1,7 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 require_once 'db.php';
+require_once 'includes/helpers.php';
 
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id || $id <= 0) {
@@ -34,7 +35,9 @@ $documents = $docStmt->fetchAll();
 // Store raw; escape only at output.
 $successMsg = $_GET['success'] ?? '';
 
-$pageTitle = htmlspecialchars($emp['family_name_latin'] . ' ' . $emp['given_name_latin'], ENT_QUOTES, 'UTF-8');
+$pageTitle = $emp['family_name_latin'] . ' ' . $emp['given_name_latin'];
+$pageEyebrow = 'Portal / Employees / Profile';
+$pageActionHtml = '<a href="index.php" class="btn btn-outline">Back to List</a><a href="edit.php?id=' . (int) $id . '" class="btn btn-secondary">Edit</a><a href="delete.php?id=' . (int) $id . '" class="btn btn-danger">Delete</a>';
 
 function val(string $v): string {
     return $v !== '' ? htmlspecialchars($v, ENT_QUOTES, 'UTF-8') : '<em class="text-muted">—</em>';
@@ -42,15 +45,6 @@ function val(string $v): string {
 
 require_once 'includes/header.php';
 ?>
-
-<div class="page-header">
-    <h2>Employee Profile</h2>
-    <div class="header-actions">
-        <a href="index.php" class="btn btn-outline">Back to List</a>
-        <a href="edit.php?id=<?= $id ?>" class="btn btn-secondary">Edit</a>
-        <a href="delete.php?id=<?= $id ?>" class="btn btn-danger">Delete</a>
-    </div>
-</div>
 
 <?php if ($successMsg): ?>
     <div class="alert alert-success"><?= htmlspecialchars($successMsg, ENT_QUOTES, 'UTF-8') ?></div>
@@ -66,9 +60,7 @@ require_once 'includes/header.php';
             $photoSrc = null;
             if (!empty($emp['photo_path'])) {
                 $norm = str_replace('\\', '/', ltrim($emp['photo_path'], './'));
-                if (strpos($norm, '..') === false && strpos($norm, 'uploads/photos/') === 0 && file_exists($emp['photo_path'])) {
-                    $photoSrc = $emp['photo_path'];
-                }
+                $photoSrc = safe_photo_src($emp['photo_path']);
             }
             ?>
             <?php if ($photoSrc !== null): ?>

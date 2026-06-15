@@ -1,5 +1,8 @@
 <?php
 require_once 'db.php';
+$pageTitle = 'Employee Management';
+$pageEyebrow = 'Portal / Employees';
+$pageActionHtml = '<a href="create.php" class="btn btn-primary"><span class="material-symbols-outlined">person_add</span>Add Employee</a>';
 require_once 'includes/header.php';
 
 $search = trim($_GET['search'] ?? '');
@@ -57,11 +60,6 @@ function safePhotoSrc(?string $path): ?string {
 }
 ?>
 
-<div class="page-header">
-    <h2>Employee List</h2>
-    <a href="create.php" class="btn btn-primary">+ Add Employee</a>
-</div>
-
 <?php if ($successMsg !== ''): ?>
     <div class="alert alert-success"><?= htmlspecialchars($successMsg, ENT_QUOTES, 'UTF-8') ?></div>
 <?php endif; ?>
@@ -116,7 +114,7 @@ function safePhotoSrc(?string $path): ?string {
                     <img src="<?= htmlspecialchars($photoSrc, ENT_QUOTES, 'UTF-8') ?>"
                          alt="Photo" class="thumb">
                 <?php else: ?>
-                    <div class="thumb-placeholder">?</div>
+                    <div class="thumb-placeholder"><?= htmlspecialchars(initials($emp['family_name_latin'], $emp['given_name_latin']), ENT_QUOTES, 'UTF-8') ?></div>
                 <?php endif; ?>
             </td>
             <td><?= htmlspecialchars($emp['employee_code'], ENT_QUOTES, 'UTF-8') ?></td>

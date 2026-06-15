@@ -58,14 +58,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
     }
 }
 
-require_once 'includes/header.php';
 $pageTitle = 'Delete Employee';
+$pageEyebrow = 'Portal / Employees / Delete';
+$pageActionHtml = '<a href="index.php" class="btn btn-outline">Back to List</a>';
+require_once 'includes/header.php';
 ?>
-
-<div class="page-header">
-    <h2>Delete Employee</h2>
-    <a href="index.php" class="btn btn-outline">Back to List</a>
-</div>
 
 <?php if ($deleteError): ?>
     <div class="alert alert-error"><?= htmlspecialchars($deleteError, ENT_QUOTES, 'UTF-8') ?></div>

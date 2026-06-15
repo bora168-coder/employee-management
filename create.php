@@ -1,6 +1,8 @@
 <?php
 require_once 'db.php';
-require_once 'includes/header.php';
+$pageTitle = 'Add Employee';
+$pageEyebrow = 'Portal / Employees / Add';
+$pageActionHtml = '<a href="index.php" class="btn btn-outline">Back to List</a>';
 
 $errors = [];
 $old    = [];
@@ -233,13 +235,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$pageTitle = 'Add Employee';
 ?>
 
-<div class="page-header">
-    <h2>Add Employee</h2>
-    <a href="index.php" class="btn btn-outline">Back to List</a>
-</div>
+<?php require_once 'includes/header.php'; ?>
 
 <?php if ($errors): ?>
     <div class="alert alert-error">

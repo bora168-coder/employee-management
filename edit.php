@@ -344,16 +344,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = 'Edit Employee';
+$pageEyebrow = 'Portal / Employees / Edit';
+$pageActionHtml = '<a href="view.php?id=' . (int) $id . '" class="btn btn-outline">Back to Profile</a><a href="index.php" class="btn btn-outline">Employee List</a>';
 require_once 'includes/header.php';
 ?>
-
-<div class="page-header">
-    <h2>Edit Employee</h2>
-    <div class="header-actions">
-        <a href="view.php?id=<?= $id ?>" class="btn btn-outline">Back to Profile</a>
-        <a href="index.php" class="btn btn-outline">Employee List</a>
-    </div>
-</div>
 
 <?php if ($errors): ?>
     <div class="alert alert-error">
