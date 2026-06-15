@@ -1,6 +1,5 @@
--- Employee Management System
+-- Government Officer Profile System
 -- Database: exam_db
--- Run once on container startup via Docker entrypoint
 
 CREATE DATABASE IF NOT EXISTS exam_db
     CHARACTER SET utf8mb4
@@ -9,18 +8,53 @@ CREATE DATABASE IF NOT EXISTS exam_db
 USE exam_db;
 
 CREATE TABLE IF NOT EXISTS employees (
-    id            INT            AUTO_INCREMENT PRIMARY KEY,
-    employee_code VARCHAR(30)    NOT NULL UNIQUE,
-    first_name    VARCHAR(100)   NOT NULL,
-    last_name     VARCHAR(100)   NOT NULL,
-    email         VARCHAR(150)   NOT NULL UNIQUE,
-    phone         VARCHAR(30)    DEFAULT NULL,
-    department    VARCHAR(100)   NOT NULL,
-    position      VARCHAR(100)   NOT NULL,
-    salary        DECIMAL(10, 2) DEFAULT 0.00,
-    hire_date     DATE           NOT NULL,
-    status        ENUM('Active', 'Inactive') DEFAULT 'Active',
-    created_at    TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMP      DEFAULT CURRENT_TIMESTAMP
-                                 ON UPDATE CURRENT_TIMESTAMP
+    id                    INT            AUTO_INCREMENT PRIMARY KEY,
+    employee_code         VARCHAR(30)    NOT NULL UNIQUE,
+    officer_number        VARCHAR(50)    DEFAULT NULL UNIQUE,
+    civil_servant_number  VARCHAR(50)    DEFAULT NULL UNIQUE,
+    national_id_number    VARCHAR(50)    DEFAULT NULL UNIQUE,
+    family_name_kh        VARCHAR(100)   NOT NULL,
+    given_name_kh         VARCHAR(100)   NOT NULL,
+    family_name_latin     VARCHAR(100)   NOT NULL,
+    given_name_latin      VARCHAR(100)   NOT NULL,
+    gender                ENUM('Male','Female','Other') NOT NULL,
+    date_of_birth         DATE           NOT NULL,
+    nationality           VARCHAR(100)   DEFAULT 'Cambodian',
+    phone                 VARCHAR(30)    DEFAULT NULL,
+    department            VARCHAR(100)   NOT NULL,
+    position              VARCHAR(100)   NOT NULL,
+    photo_path            VARCHAR(500)   DEFAULT NULL,
+    status                ENUM('Active','Inactive','Retired','Suspended','Transferred','Deceased') DEFAULT 'Active',
+    created_at            TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    updated_at            TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS employee_addresses (
+    id            INT          AUTO_INCREMENT PRIMARY KEY,
+    employee_id   INT          NOT NULL,
+    address_type  ENUM('birthplace','permanent','current','voter_registration') NOT NULL,
+    house_number  VARCHAR(20)  DEFAULT NULL,
+    street_number VARCHAR(20)  DEFAULT NULL,
+    village       VARCHAR(100) DEFAULT NULL,
+    commune       VARCHAR(100) DEFAULT NULL,
+    district      VARCHAR(100) DEFAULT NULL,
+    province      VARCHAR(100) DEFAULT NULL,
+    created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+    UNIQUE KEY uq_employee_address_type (employee_id, address_type)
+);
+
+CREATE TABLE IF NOT EXISTS employee_documents (
+    id                INT          AUTO_INCREMENT PRIMARY KEY,
+    employee_id       INT          NOT NULL,
+    document_type     VARCHAR(100) NOT NULL,
+    document_number   VARCHAR(100) DEFAULT NULL,
+    issue_date        DATE         DEFAULT NULL,
+    expiry_date       DATE         DEFAULT NULL,
+    issuing_authority VARCHAR(200) DEFAULT NULL,
+    file_path         VARCHAR(500) DEFAULT NULL,
+    notes             TEXT         DEFAULT NULL,
+    created_at        TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
 );

@@ -10,24 +10,20 @@ require_once 'db.php';
 
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id || $id <= 0) {
-    header('Location: index.php?error=invalid_id');
+    header('Location: index.php?error=' . urlencode('Invalid employee ID.'));
     exit;
 }
 
-try {
-    $stmt = $pdo->prepare(
-        "SELECT id, employee_code, first_name, last_name, department, position
-         FROM employees WHERE id = ? LIMIT 1"
-    );
-    $stmt->execute([$id]);
-    $employee = $stmt->fetch();
-} catch (PDOException $e) {
-    error_log('Failed to load employee: ' . $e->getMessage());
-    $employee = null;
-}
+$stmt = $pdo->prepare(
+    'SELECT id, employee_code, family_name_kh, given_name_kh,
+            family_name_latin, given_name_latin, department, position, photo_path
+     FROM employees WHERE id = ? LIMIT 1'
+);
+$stmt->execute([$id]);
+$employee = $stmt->fetch();
 
 if (!$employee) {
-    header('Location: index.php?error=not_found');
+    header('Location: index.php?error=' . urlencode('Employee not found.'));
     exit;
 }
 
@@ -42,10 +38,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
             $deleteError = 'Invalid employee ID.';
         } else {
             try {
-                $stmt = $pdo->prepare("DELETE FROM employees WHERE id = ?");
+                $photoPath = $employee['photo_path'];
+                $stmt = $pdo->prepare('DELETE FROM employees WHERE id = ?');
                 $stmt->execute([$id]);
                 if ($stmt->rowCount() > 0) {
-                    header('Location: index.php?success=deleted');
+                    // Remove photo file after successful delete (CASCADE handles child rows)
+                    if ($photoPath && file_exists($photoPath)) {
+                        @unlink($photoPath);
+                    }
+                    header('Location: index.php?success=' . urlencode('Employee deleted successfully.'));
                     exit;
                 }
                 $deleteError = 'Employee could not be deleted.';
@@ -58,11 +59,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
 }
 
 require_once 'includes/header.php';
+$pageTitle = 'Delete Employee';
 ?>
 
 <div class="page-header">
     <h2>Delete Employee</h2>
-    <a href="index.php" class="btn btn-outline">&larr; Back to List</a>
+    <a href="index.php" class="btn btn-outline">Back to List</a>
 </div>
 
 <?php if ($deleteError): ?>
@@ -72,7 +74,7 @@ require_once 'includes/header.php';
 <div class="delete-card">
     <div class="delete-warning">
         <h3>&#9888; Are you sure you want to delete this employee?</h3>
-        <p>This action cannot be undone.</p>
+        <p>This action cannot be undone. All addresses and documents for this officer will also be permanently removed.</p>
     </div>
 
     <div class="detail-grid">
@@ -81,9 +83,15 @@ require_once 'includes/header.php';
             <span class="detail-value"><?= htmlspecialchars($employee['employee_code'], ENT_QUOTES, 'UTF-8') ?></span>
         </div>
         <div class="detail-row">
-            <span class="detail-label">Full Name</span>
+            <span class="detail-label">Khmer Name</span>
             <span class="detail-value">
-                <?= htmlspecialchars($employee['first_name'] . ' ' . $employee['last_name'], ENT_QUOTES, 'UTF-8') ?>
+                <?= htmlspecialchars($employee['family_name_kh'] . ' ' . $employee['given_name_kh'], ENT_QUOTES, 'UTF-8') ?>
+            </span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Latin Name</span>
+            <span class="detail-value">
+                <?= htmlspecialchars($employee['family_name_latin'] . ' ' . $employee['given_name_latin'], ENT_QUOTES, 'UTF-8') ?>
             </span>
         </div>
         <div class="detail-row">

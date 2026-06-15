@@ -1,0 +1,15 @@
+Options -Indexes
+
+# Block execution of all server-side and browser-executable script types.
+# This prevents uploaded files from being run as code, even if Apache
+# mis-detects their MIME type.
+<FilesMatch "\.(php|php3|php4|php5|php7|php8|phtml|pl|py|rb|cgi|sh|bash|svg|svgz|html|htm|shtml|xhtml|xml|htaccess|htpasswd)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Force all files to be served as binary downloads when accessed directly.
+# Images shown via <img src="..."> still render correctly in browsers.
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>

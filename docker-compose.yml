@@ -10,26 +10,31 @@ services:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: exam_db
-      DB_USER: app_user
-      DB_PASSWORD: secret123
+      DB_USER: ${DB_USER:-app_user}
+      DB_PASSWORD: ${DB_PASSWORD}
     depends_on:
       mysql:
         condition: service_healthy
     networks:
       - employee_network
     restart: unless-stopped
+    volumes:
+      - uploads_data:/var/www/html/uploads
 
   mysql:
     image: mysql:8.0
     container_name: employee_mysql
     command: --default-authentication-plugin=mysql_native_password
     environment:
-      MYSQL_ROOT_PASSWORD: rootsecret123
-      MYSQL_DATABASE: exam_db
-      MYSQL_USER: app_user
-      MYSQL_PASSWORD: secret123
-    ports:
-      - "3309:3306"
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-exam_db}
+      MYSQL_USER: ${DB_USER:-app_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    # Port 3306 is intentionally NOT bound to the host.
+    # The PHP app reaches MySQL via the internal Docker network (mysql:3306).
+    # Uncomment the lines below ONLY for local debugging and never in production.
+    # ports:
+    #   - "3309:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -37,7 +42,7 @@ services:
       - employee_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -prootsecret123"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -49,3 +54,4 @@ networks:
 
 volumes:
   mysql_data:
+  uploads_data:

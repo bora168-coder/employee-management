@@ -44,6 +44,9 @@ spec:
                 secretKeyRef:
                   name: mysql-secret
                   key: MYSQL_PASSWORD
+          volumeMounts:
+            - name: uploads-storage
+              mountPath: /var/www/html/uploads
           readinessProbe:
             httpGet:
               path: /index.php
@@ -67,3 +70,7 @@ spec:
             limits:
               memory: "256Mi"
               cpu: "500m"
+      volumes:
+        - name: uploads-storage
+          persistentVolumeClaim:
+            claimName: uploads-pvc

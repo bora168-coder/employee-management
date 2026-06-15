@@ -1,120 +1,142 @@
 <?php
 require_once 'db.php';
+require_once 'includes/header.php';
 
 $search = trim($_GET['search'] ?? '');
+$statusFilter = trim($_GET['status'] ?? '');
 
-$successMessages = [
-    'created' => 'Employee created successfully.',
-    'updated' => 'Employee updated successfully.',
-    'deleted' => 'Employee deleted successfully.',
-];
-$errorMessages = [
-    'not_found'   => 'Employee was not found.',
-    'invalid_id'  => 'Invalid employee ID.',
-    'delete_fail' => 'Failed to delete employee.',
-];
+$params = [];
+$where  = [];
 
-$successMsg = '';
-$errorMsg   = '';
-
-if (!empty($_GET['success']) && isset($successMessages[$_GET['success']])) {
-    $successMsg = $successMessages[$_GET['success']];
-}
-if (!empty($_GET['error']) && isset($errorMessages[$_GET['error']])) {
-    $errorMsg = $errorMessages[$_GET['error']];
+if ($search !== '') {
+    $like = '%' . $search . '%';
+    $where[] = '(e.employee_code LIKE ? OR e.family_name_kh LIKE ? OR e.given_name_kh LIKE ?
+                 OR e.family_name_latin LIKE ? OR e.given_name_latin LIKE ?
+                 OR e.national_id_number LIKE ? OR e.phone LIKE ?
+                 OR e.department LIKE ? OR e.position LIKE ?)';
+    for ($i = 0; $i < 9; $i++) { $params[] = $like; }
 }
 
-try {
-    if ($search !== '') {
-        $like = '%' . $search . '%';
-        $stmt = $pdo->prepare(
-            "SELECT * FROM employees
-             WHERE employee_code LIKE ? OR first_name LIKE ? OR last_name LIKE ?
-                OR email LIKE ? OR department LIKE ? OR position LIKE ?
-             ORDER BY id DESC"
-        );
-        $stmt->execute([$like, $like, $like, $like, $like, $like]);
-    } else {
-        $stmt = $pdo->query("SELECT * FROM employees ORDER BY id DESC");
+if ($statusFilter !== '') {
+    $where[] = 'e.status = ?';
+    $params[] = $statusFilter;
+}
+
+$sql = 'SELECT e.id, e.employee_code, e.family_name_kh, e.given_name_kh,
+               e.family_name_latin, e.given_name_latin, e.gender,
+               e.department, e.position, e.phone, e.status, e.photo_path
+        FROM employees e';
+if ($where) { $sql .= ' WHERE ' . implode(' AND ', $where); }
+$sql .= ' ORDER BY e.id DESC';
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
+$employees = $stmt->fetchAll();
+
+// Store raw values; escape only at the point of output.
+$successMsg = $_GET['success'] ?? '';
+$errorMsg   = $_GET['error']   ?? '';
+
+$statusOptions = ['Active','Inactive','Retired','Suspended','Transferred','Deceased'];
+
+/**
+ * Return a safe relative URL for a stored photo path.
+ * The path must start with uploads/photos/ and must not contain traversal
+ * sequences. Returns null when the path is invalid or the file is missing.
+ */
+function safePhotoSrc(?string $path): ?string {
+    if ($path === null || $path === '') { return null; }
+    // Normalise to forward slashes and remove any leading ./
+    $norm = str_replace('\\', '/', ltrim($path, './'));
+    // Must be rooted inside uploads/photos/ with no traversal
+    if (strpos($norm, '..') !== false || strpos($norm, 'uploads/photos/') !== 0) {
+        return null;
     }
-    $employees = $stmt->fetchAll();
-} catch (PDOException $e) {
-    error_log('Failed to load employees: ' . $e->getMessage());
-    $employees = [];
-    $errorMsg  = 'Unable to load employees.';
+    if (!file_exists($path)) { return null; }
+    return $path;
 }
-
-require_once 'includes/header.php';
 ?>
-
-<?php if ($successMsg): ?>
-    <div class="alert alert-success"><?= htmlspecialchars($successMsg, ENT_QUOTES, 'UTF-8') ?></div>
-<?php endif; ?>
-<?php if ($errorMsg): ?>
-    <div class="alert alert-error"><?= htmlspecialchars($errorMsg, ENT_QUOTES, 'UTF-8') ?></div>
-<?php endif; ?>
 
 <div class="page-header">
     <h2>Employee List</h2>
     <a href="create.php" class="btn btn-primary">+ Add Employee</a>
 </div>
 
-<form method="GET" action="index.php" class="search-form">
-    <input type="text" name="search" placeholder="Search by name, code, email, department..."
-           value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>">
+<?php if ($successMsg !== ''): ?>
+    <div class="alert alert-success"><?= htmlspecialchars($successMsg, ENT_QUOTES, 'UTF-8') ?></div>
+<?php endif; ?>
+<?php if ($errorMsg !== ''): ?>
+    <div class="alert alert-error"><?= htmlspecialchars($errorMsg, ENT_QUOTES, 'UTF-8') ?></div>
+<?php endif; ?>
+
+<form method="GET" class="search-form">
+    <input type="text" name="search" placeholder="Search by code, name, ID, phone, department…"
+           value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>" class="form-control">
+    <select name="status" class="form-control">
+        <option value="">All Statuses</option>
+        <?php foreach ($statusOptions as $opt): ?>
+            <option value="<?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>"
+                    <?= $statusFilter === $opt ? 'selected' : '' ?>><?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?></option>
+        <?php endforeach; ?>
+    </select>
     <button type="submit" class="btn btn-secondary">Search</button>
-    <a href="index.php" class="btn btn-outline">Reset</a>
+    <?php if ($search !== '' || $statusFilter !== ''): ?>
+        <a href="index.php" class="btn btn-outline">Clear</a>
+    <?php endif; ?>
 </form>
 
 <?php if (empty($employees)): ?>
     <div class="empty-state">
-        <?php if ($search !== ''): ?>
-            <p>No employees found for "<strong><?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?></strong>".</p>
-        <?php else: ?>
-            <p>No employees yet. <a href="create.php">Add the first employee</a>.</p>
-        <?php endif; ?>
+        <p>No employees found.</p>
+        <a href="create.php" class="btn btn-primary">Add First Employee</a>
     </div>
 <?php else: ?>
-    <div class="table-responsive">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Employee Code</th>
-                    <th>Full Name</th>
-                    <th>Email</th>
-                    <th>Department</th>
-                    <th>Position</th>
-                    <th>Status</th>
-                    <th>Hire Date</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($employees as $i => $emp): ?>
-                <tr>
-                    <td><?= $i + 1 ?></td>
-                    <td><?= htmlspecialchars($emp['employee_code'], ENT_QUOTES, 'UTF-8') ?></td>
-                    <td><?= htmlspecialchars($emp['first_name'] . ' ' . $emp['last_name'], ENT_QUOTES, 'UTF-8') ?></td>
-                    <td><?= htmlspecialchars($emp['email'], ENT_QUOTES, 'UTF-8') ?></td>
-                    <td><?= htmlspecialchars($emp['department'], ENT_QUOTES, 'UTF-8') ?></td>
-                    <td><?= htmlspecialchars($emp['position'], ENT_QUOTES, 'UTF-8') ?></td>
-                    <td>
-                        <span class="badge badge-<?= $emp['status'] === 'Active' ? 'active' : 'inactive' ?>">
-                            <?= htmlspecialchars($emp['status'], ENT_QUOTES, 'UTF-8') ?>
-                        </span>
-                    </td>
-                    <td><?= htmlspecialchars($emp['hire_date'], ENT_QUOTES, 'UTF-8') ?></td>
-                    <td class="actions">
-                        <a href="view.php?id=<?= (int)$emp['id'] ?>" class="btn btn-sm btn-info">View</a>
-                        <a href="edit.php?id=<?= (int)$emp['id'] ?>" class="btn btn-sm btn-warning">Edit</a>
-                        <a href="delete.php?id=<?= (int)$emp['id'] ?>" class="btn btn-sm btn-danger">Delete</a>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
+<div class="table-wrap">
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Photo</th>
+            <th>Code</th>
+            <th>Khmer Name</th>
+            <th>Latin Name</th>
+            <th>Gender</th>
+            <th>Department</th>
+            <th>Position</th>
+            <th>Phone</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    <?php foreach ($employees as $emp): ?>
+        <?php $photoSrc = safePhotoSrc($emp['photo_path']); ?>
+        <tr>
+            <td class="td-photo">
+                <?php if ($photoSrc !== null): ?>
+                    <img src="<?= htmlspecialchars($photoSrc, ENT_QUOTES, 'UTF-8') ?>"
+                         alt="Photo" class="thumb">
+                <?php else: ?>
+                    <div class="thumb-placeholder">?</div>
+                <?php endif; ?>
+            </td>
+            <td><?= htmlspecialchars($emp['employee_code'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars($emp['family_name_kh'] . ' ' . $emp['given_name_kh'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars($emp['family_name_latin'] . ' ' . $emp['given_name_latin'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars($emp['gender'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars($emp['department'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars($emp['position'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars($emp['phone'] ?? '—', ENT_QUOTES, 'UTF-8') ?></td>
+            <td><span class="badge badge-<?= htmlspecialchars(strtolower($emp['status']), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($emp['status'], ENT_QUOTES, 'UTF-8') ?></span></td>
+            <td class="td-actions">
+                <a href="view.php?id=<?= (int)$emp['id'] ?>" class="btn btn-sm btn-outline">View</a>
+                <a href="edit.php?id=<?= (int)$emp['id'] ?>" class="btn btn-sm btn-secondary">Edit</a>
+                <a href="delete.php?id=<?= (int)$emp['id'] ?>" class="btn btn-sm btn-danger">Delete</a>
+            </td>
+        </tr>
+    <?php endforeach; ?>
+    </tbody>
+</table>
+</div>
 <?php endif; ?>
 
 <?php require_once 'includes/footer.php'; ?>
