@@ -3,6 +3,7 @@ CLAUDE.md
 
 # Secrets — never commit
 .env
+k8s/mysql-secret.yaml
 
 # PHP dependencies
 vendor/

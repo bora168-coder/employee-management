@@ -1,25 +1,72 @@
 <?php
 require_once 'includes/auth.php';
 require_auth();
-$pageTitle = 'System Deployment Status';
+require_once 'db.php';
+
+$pageTitle   = 'System Deployment Status';
 $pageEyebrow = 'Portal / Admin Panel';
 
-// TODO: Replace this isolated status summary with real container/Kubernetes health endpoints.
+// Real environment detection
+$phpVersion   = phpversion();
+$mysqlVersion = 'Unknown';
+try {
+    $verStmt      = $pdo->query('SELECT VERSION() AS v');
+    $mysqlVersion = $verStmt->fetchColumn();
+} catch (Exception $e) {
+    $mysqlVersion = 'Connection error';
+}
+
+$uploadsDir   = __DIR__ . '/uploads';
+$uploadsExists = is_dir($uploadsDir);
+$uploadsWrite  = $uploadsExists && is_writable($uploadsDir);
+
+$isDocker = file_exists('/.dockerenv') || (
+    file_exists('/proc/1/cgroup') &&
+    str_contains((string) @file_get_contents('/proc/1/cgroup'), 'docker')
+);
+$isKubernetes = !empty(getenv('KUBERNETES_SERVICE_HOST'));
+$environment  = $isKubernetes ? 'Kubernetes' : ($isDocker ? 'Docker' : 'Local');
+
+$dbStatus      = ($mysqlVersion !== 'Unknown' && $mysqlVersion !== 'Connection error') ? 'Online' : 'Error';
+$uploadsStatus = $uploadsWrite ? 'Online' : ($uploadsExists ? 'Warning' : 'Offline');
+
 $services = [
-    ['name' => 'PHP Apache App', 'target' => 'php-service', 'status' => 'Online', 'detail' => 'Serving GovLink frontend'],
-    ['name' => 'MySQL Database', 'target' => 'mysql-service', 'status' => 'Online', 'detail' => 'Persistent employee registry'],
-    ['name' => 'Uploads Volume', 'target' => 'uploads-pvc', 'status' => 'Online', 'detail' => 'Photo storage mounted'],
-    ['name' => 'Cloudflared Tunnel', 'target' => 'external', 'status' => 'Pending', 'detail' => 'Requires operator credentials'],
+    [
+        'name'   => 'PHP Apache App',
+        'target' => 'php-service',
+        'status' => 'Online',
+        'detail' => 'PHP ' . $phpVersion . ' — ' . $environment . ' runtime',
+    ],
+    [
+        'name'   => 'MySQL Database',
+        'target' => 'mysql-service',
+        'status' => $dbStatus,
+        'detail' => 'MySQL ' . $mysqlVersion . ' — exam_db schema',
+    ],
+    [
+        'name'   => 'Uploads Volume',
+        'target' => 'uploads-pvc',
+        'status' => $uploadsStatus,
+        'detail' => $uploadsWrite
+            ? 'Photo storage writable'
+            : ($uploadsExists ? 'Directory exists but not writable' : 'Directory not found'),
+    ],
+    [
+        'name'   => 'Cloudflared Tunnel',
+        'target' => 'external',
+        'status' => 'Pending',
+        'detail' => 'Requires operator credentials',
+    ],
 ];
 
 require_once 'includes/header.php';
 ?>
 
 <section class="dashboard-grid">
-    <article class="stat-card"><p>Environment</p><strong>Docker/K8s</strong><span>Configured for Minikube</span></article>
-    <article class="stat-card"><p>Application</p><strong>PHP 8.2</strong><span>Apache runtime</span></article>
-    <article class="stat-card"><p>Database</p><strong>MySQL 8</strong><span>exam_db schema</span></article>
-    <article class="stat-card"><p>Storage</p><strong>Uploads</strong><span>Photo volume enabled</span></article>
+    <article class="stat-card"><p>Environment</p><strong><?= h($environment) ?></strong><span>Detected at runtime</span></article>
+    <article class="stat-card"><p>Application</p><strong>PHP <?= h($phpVersion) ?></strong><span>Apache runtime</span></article>
+    <article class="stat-card"><p>Database</p><strong>MySQL <?= h($mysqlVersion) ?></strong><span>exam_db schema</span></article>
+    <article class="stat-card"><p>Storage</p><strong>Uploads</strong><span><?= $uploadsWrite ? 'Writable' : ($uploadsExists ? 'Not writable' : 'Missing') ?></span></article>
 </section>
 
 <section class="panel">
