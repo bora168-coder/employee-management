@@ -1,5 +1,7 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
+require_once 'includes/auth.php';
+require_auth();
 require_once 'db.php';
 require_once 'includes/helpers.php';
 

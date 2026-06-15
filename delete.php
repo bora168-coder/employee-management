@@ -2,6 +2,8 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+require_once 'includes/auth.php';
+require_auth();
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }

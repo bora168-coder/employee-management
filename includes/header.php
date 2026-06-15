@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/helpers.php';
 require_auth();
 $user = current_user();
 ?>

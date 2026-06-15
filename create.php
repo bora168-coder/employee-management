@@ -1,4 +1,6 @@
 <?php
+require_once 'includes/auth.php';
+require_auth();
 require_once 'db.php';
 $pageTitle = 'Add Employee';
 $pageEyebrow = 'Portal / Employees / Add';
