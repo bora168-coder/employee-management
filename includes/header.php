@@ -3,9 +3,10 @@ require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/helpers.php';
 require_auth();
 $user = current_user();
+$locale = current_locale();
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= h($locale) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,18 +21,18 @@ $user = current_user();
 <div class="app-shell">
     <aside class="gov-sidebar" aria-label="Primary navigation">
         <div class="brand-block">
-            <a class="brand-title" href="dashboard.php">GovLink Pro EMS</a>
-            <p>Gov Admin Portal</p>
+            <a class="brand-title" href="<?= h(lang_url('dashboard.php')) ?>"><?= h(ui_text('app_name')) ?></a>
+            <p><?= h(ui_text('gov_admin_portal')) ?></p>
         </div>
 
         <nav class="side-nav">
-            <a href="dashboard.php" class="nav-item<?= active_nav('dashboard.php') ?>"><span class="material-symbols-outlined">dashboard</span>Dashboard</a>
-            <a href="index.php" class="nav-item<?= active_nav('index.php') ?>"><span class="material-symbols-outlined">badge</span>Employees</a>
-            <a href="create.php" class="nav-item<?= active_nav('create.php') ?>"><span class="material-symbols-outlined">person_add</span>Add Employee</a>
-            <a href="verification.php" class="nav-item<?= active_nav('verification.php') ?>"><span class="material-symbols-outlined">verified_user</span>Verification</a>
-            <a href="users.php" class="nav-item<?= active_nav('users.php') ?>"><span class="material-symbols-outlined">manage_accounts</span>User Management</a>
-            <a href="deployment.php" class="nav-item<?= active_nav('deployment.php') ?>"><span class="material-symbols-outlined">monitor_heart</span>Deployment</a>
-            <a href="logout.php" class="nav-item"><span class="material-symbols-outlined">logout</span>Logout</a>
+            <a href="<?= h(lang_url('dashboard.php')) ?>" class="nav-item<?= active_nav('dashboard.php') ?>"><span class="material-symbols-outlined">dashboard</span><?= h(ui_text('dashboard')) ?></a>
+            <a href="<?= h(lang_url('index.php')) ?>" class="nav-item<?= active_nav('index.php') ?>"><span class="material-symbols-outlined">badge</span><?= h(ui_text('employees')) ?></a>
+            <a href="<?= h(lang_url('create.php')) ?>" class="nav-item<?= active_nav('create.php') ?>"><span class="material-symbols-outlined">person_add</span><?= h(ui_text('add_employee')) ?></a>
+            <a href="<?= h(lang_url('verification.php')) ?>" class="nav-item<?= active_nav('verification.php') ?>"><span class="material-symbols-outlined">verified_user</span><?= h(ui_text('verification')) ?></a>
+            <a href="<?= h(lang_url('users.php')) ?>" class="nav-item<?= active_nav('users.php') ?>"><span class="material-symbols-outlined">manage_accounts</span><?= h(ui_text('user_management')) ?></a>
+            <a href="<?= h(lang_url('deployment.php')) ?>" class="nav-item<?= active_nav('deployment.php') ?>"><span class="material-symbols-outlined">monitor_heart</span><?= h(ui_text('deployment')) ?></a>
+            <a href="logout.php" class="nav-item"><span class="material-symbols-outlined">logout</span><?= h(ui_text('logout')) ?></a>
         </nav>
 
         <div class="sidebar-footer">
@@ -47,10 +48,10 @@ $user = current_user();
     <header class="topbar">
         <form class="global-search" action="index.php" method="GET" role="search">
             <span class="material-symbols-outlined">search</span>
-            <input type="search" name="search" placeholder="Search records, documents, or reports..." aria-label="Search records">
+            <input type="search" name="search" placeholder="<?= h(ui_text('search_placeholder')) ?>" aria-label="<?= h(ui_text('search_placeholder')) ?>">
         </form>
         <div class="topbar-actions">
-            <span class="language-toggle"><span class="material-symbols-outlined">language</span> Khmer/English</span>
+            <a class="language-toggle" href="<?= h(lang_url($_SERVER['SCRIPT_NAME'] ?? 'dashboard.php', $locale === 'en' ? 'km' : 'en', $_GET)) ?>" title="<?= h(ui_text('language_toggle_title')) ?>"><span class="material-symbols-outlined">language</span><?= h(ui_text('language_toggle')) ?></a>
             <span class="notification-dot" aria-label="3 notifications"><span class="material-symbols-outlined">notifications</span></span>
             <div class="user-chip">
                 <div>
@@ -62,11 +63,11 @@ $user = current_user();
         </div>
     </header>
     <nav class="mobile-nav" aria-label="Mobile navigation">
-        <a href="dashboard.php" class="<?= active_nav('dashboard.php') ?>"><span class="material-symbols-outlined">dashboard</span><span>Home</span></a>
-        <a href="index.php" class="<?= active_nav('index.php') ?>"><span class="material-symbols-outlined">badge</span><span>Employees</span></a>
-        <a href="create.php" class="<?= active_nav('create.php') ?>"><span class="material-symbols-outlined">person_add</span><span>Add</span></a>
-        <a href="verification.php" class="<?= active_nav('verification.php') ?>"><span class="material-symbols-outlined">verified_user</span><span>Verify</span></a>
-        <a href="users.php" class="<?= active_nav('users.php') ?>"><span class="material-symbols-outlined">manage_accounts</span><span>Users</span></a>
+        <a href="<?= h(lang_url('dashboard.php')) ?>" class="<?= active_nav('dashboard.php') ?>"><span class="material-symbols-outlined">dashboard</span><span><?= h(ui_text('dashboard')) ?></span></a>
+        <a href="<?= h(lang_url('index.php')) ?>" class="<?= active_nav('index.php') ?>"><span class="material-symbols-outlined">badge</span><span><?= h(ui_text('employees')) ?></span></a>
+        <a href="<?= h(lang_url('create.php')) ?>" class="<?= active_nav('create.php') ?>"><span class="material-symbols-outlined">person_add</span><span><?= h(ui_text('add_employee')) ?></span></a>
+        <a href="<?= h(lang_url('verification.php')) ?>" class="<?= active_nav('verification.php') ?>"><span class="material-symbols-outlined">verified_user</span><span><?= h(ui_text('verification')) ?></span></a>
+        <a href="<?= h(lang_url('users.php')) ?>" class="<?= active_nav('users.php') ?>"><span class="material-symbols-outlined">manage_accounts</span><span><?= h(ui_text('user_management')) ?></span></a>
     </nav>
     <main class="main-content">
         <?php if (!empty($pageEyebrow) || !empty($pageTitle)): ?>

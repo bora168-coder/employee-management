@@ -4,8 +4,8 @@ require_auth();
 require_once 'db.php';
 require_once 'includes/helpers.php';
 
-$pageTitle = 'Verification Queue';
-$pageEyebrow = 'Portal / Verification';
+$pageTitle = ui_text('verification');
+$pageEyebrow = ui_text('portal') . ' / ' . ui_text('verification');
 
 $stmt = $pdo->query("SELECT e.id, e.employee_code, e.family_name_latin, e.given_name_latin, e.department, e.position, e.status,
     SUM(CASE WHEN d.expiry_date IS NOT NULL AND d.expiry_date < CURDATE() THEN 1 ELSE 0 END) AS expired_docs,
@@ -21,17 +21,17 @@ require_once 'includes/header.php';
 ?>
 
 <section class="filter-bar">
-    <span class="badge badge-pending"><?= count($records) ?> pending records</span>
-    <a href="index.php" class="btn btn-outline"><span class="material-symbols-outlined">badge</span>Employee Registry</a>
+    <span class="badge badge-pending"><?= count($records) ?> <?= h(ui_text('pending_verification')) ?></span>
+    <a href="<?= h(lang_url('index.php')) ?>" class="btn btn-outline"><span class="material-symbols-outlined">badge</span><?= h(ui_text('employee_registry')) ?></a>
 </section>
 
 <?php if (!$records): ?>
-    <div class="empty-state"><p>All employee records are currently verified.</p></div>
+    <div class="empty-state"><p><?= h(ui_text('all_verified')) ?></p></div>
 <?php else: ?>
 <div class="table-wrap">
     <table class="data-table">
         <thead>
-            <tr><th>Employee</th><th>Department</th><th>Status</th><th>Issue</th><th>Action</th></tr>
+            <tr><th><?= h(ui_text('employee')) ?></th><th><?= h(ui_text('department')) ?></th><th><?= h(ui_text('status')) ?></th><th><?= h(ui_text('issue')) ?></th><th><?= h(ui_text('action')) ?></th></tr>
         </thead>
         <tbody>
         <?php foreach ($records as $record): ?>
@@ -46,7 +46,7 @@ require_once 'includes/header.php';
                 <td><?= h($record['department']) ?><br><span class="text-muted"><?= h($record['position']) ?></span></td>
                 <td><span class="<?= h(status_badge_class($record['status'])) ?>"><?= h($record['status']) ?></span></td>
                 <td><?= h(implode(', ', $issues)) ?></td>
-                <td><a class="btn btn-sm btn-primary" href="view.php?id=<?= (int) $record['id'] ?>">Review</a></td>
+                <td><a class="btn btn-sm btn-primary" href="<?= h(lang_url('view.php?id=' . (int) $record['id'])) ?>"><?= h(ui_text('review')) ?></a></td>
             </tr>
         <?php endforeach; ?>
         </tbody>
@@ -59,7 +59,7 @@ require_once 'includes/header.php';
         <div>
             <strong><?= h($record['family_name_latin'] . ' ' . $record['given_name_latin']) ?></strong>
             <p class="text-muted"><?= h($record['department']) ?> / <?= h($record['employee_code']) ?></p>
-            <a class="btn btn-sm btn-outline" href="view.php?id=<?= (int) $record['id'] ?>">Review</a>
+            <a class="btn btn-sm btn-outline" href="<?= h(lang_url('view.php?id=' . (int) $record['id'])) ?>"><?= h(ui_text('review')) ?></a>
         </div>
     </article>
     <?php endforeach; ?>

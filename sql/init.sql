@@ -72,3 +72,16 @@ CREATE TABLE IF NOT EXISTS users (
     created_at   TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
     updated_at   TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+-- Default admin user for first login on a fresh deployment.
+-- Password is bcrypt-hashed (cost 12). Check your setup documentation for the default credential.
+-- IMPORTANT: Change this password immediately after first login.
+INSERT IGNORE INTO users (username, email, password, full_name, role, status)
+VALUES (
+    'admin',
+    'admin@govlink.local',
+    '$2y$12$lsUMj1PM.U4g3dI3/R7VWOm9eavgl8Nr0mk1mhJ1dBS.n9v3Oicqm',
+    'System Administrator',
+    'Administrator',
+    'Active'
+);

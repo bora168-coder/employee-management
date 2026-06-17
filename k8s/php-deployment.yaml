@@ -49,7 +49,7 @@ spec:
               mountPath: /var/www/html/uploads
           readinessProbe:
             httpGet:
-              path: /index.php
+              path: /health.php
               port: 80
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -57,7 +57,7 @@ spec:
             failureThreshold: 6
           livenessProbe:
             httpGet:
-              path: /index.php
+              path: /health.php
               port: 80
             initialDelaySeconds: 20
             periodSeconds: 20

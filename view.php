@@ -7,7 +7,7 @@ require_once 'includes/helpers.php';
 
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id || $id <= 0) {
-    header('Location: index.php?error=' . urlencode('Invalid employee ID.'));
+    header('Location: ' . lang_url('index.php?error=' . urlencode('Invalid employee ID.')));
     exit;
 }
 
@@ -15,7 +15,7 @@ $stmt = $pdo->prepare('SELECT * FROM employees WHERE id = ? LIMIT 1');
 $stmt->execute([$id]);
 $emp = $stmt->fetch();
 if (!$emp) {
-    header('Location: index.php?error=' . urlencode('Employee not found.'));
+    header('Location: ' . lang_url('index.php?error=' . urlencode('Employee not found.')));
     exit;
 }
 
@@ -38,8 +38,8 @@ $documents = $docStmt->fetchAll();
 $successMsg = $_GET['success'] ?? '';
 
 $pageTitle = $emp['family_name_latin'] . ' ' . $emp['given_name_latin'];
-$pageEyebrow = 'Portal / Employees / Profile';
-$pageActionHtml = '<a href="index.php" class="btn btn-outline">Back to List</a><a href="edit.php?id=' . (int) $id . '" class="btn btn-secondary">Edit</a><a href="delete.php?id=' . (int) $id . '" class="btn btn-danger">Delete</a>';
+$pageEyebrow = ui_text('portal') . ' / ' . ui_text('employees') . ' / ' . ui_text('profile');
+$pageActionHtml = '<a href="' . h(lang_url('index.php')) . '" class="btn btn-outline">' . h(ui_text('back_to_list')) . '</a><a href="' . h(lang_url('edit.php?id=' . (int) $id)) . '" class="btn btn-secondary">' . h(ui_text('edit')) . '</a><a href="' . h(lang_url('delete.php?id=' . (int) $id)) . '" class="btn btn-danger">' . h(ui_text('delete')) . '</a>';
 
 function val(string $v): string {
     return $v !== '' ? htmlspecialchars($v, ENT_QUOTES, 'UTF-8') : '<em class="text-muted">—</em>';

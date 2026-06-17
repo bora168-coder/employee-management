@@ -4,9 +4,9 @@ require_auth();
 require_once 'db.php';
 require_once 'includes/helpers.php';
 
-$pageTitle = 'Executive Overview';
-$pageEyebrow = 'Portal / Dashboard';
-$pageActionHtml = '<a class="btn btn-primary" href="index.php"><span class="material-symbols-outlined">download</span>Generate Report</a>';
+$pageTitle = ui_text('dashboard');
+$pageEyebrow = ui_text('portal') . ' / ' . ui_text('dashboard');
+$pageActionHtml = '<a class="btn btn-primary" href="' . h(lang_url('index.php')) . '"><span class="material-symbols-outlined">download</span>' . h(ui_text('generate_report')) . '</a>';
 
 $totalEmployees = (int) $pdo->query('SELECT COUNT(*) FROM employees')->fetchColumn();
 $activeEmployees = (int) $pdo->query("SELECT COUNT(*) FROM employees WHERE status = 'Active'")->fetchColumn();
@@ -28,35 +28,35 @@ require_once 'includes/header.php';
 
 <section class="dashboard-grid">
     <article class="stat-card">
-        <p>Total Employees</p>
+        <p><?= h(ui_text('total_employees')) ?></p>
         <strong><?= number_format($totalEmployees) ?></strong>
-        <span><span class="material-symbols-outlined">trending_up</span>Current registry size</span>
+        <span><span class="material-symbols-outlined">trending_up</span><?= h(ui_text('current_registry_size')) ?></span>
     </article>
     <article class="stat-card">
-        <p>Active Employees</p>
+        <p><?= h(ui_text('active_employees')) ?></p>
         <strong><?= number_format($activeEmployees) ?></strong>
-        <span><?= $totalEmployees ? round(($activeEmployees / $totalEmployees) * 100, 1) : 0 ?>% active rate</span>
+        <span><?= $totalEmployees ? round(($activeEmployees / $totalEmployees) * 100, 1) : 0 ?>% <?= h(ui_text('active_rate')) ?></span>
     </article>
     <article class="stat-card">
-        <p>Pending Verification</p>
+        <p><?= h(ui_text('pending_verification')) ?></p>
         <strong><?= number_format($pendingVerification) ?></strong>
-        <span style="color:var(--color-danger);"><span class="material-symbols-outlined">warning</span>Requires review</span>
+        <span style="color:var(--color-danger);"><span class="material-symbols-outlined">warning</span><?= h(ui_text('requires_review')) ?></span>
     </article>
     <article class="stat-card">
-        <p>Expiring Documents</p>
+        <p><?= h(ui_text('expiring_documents')) ?></p>
         <strong><?= number_format($expiringDocuments) ?></strong>
-        <span><span class="material-symbols-outlined">schedule</span>Within 30 days</span>
+        <span><span class="material-symbols-outlined">schedule</span><?= h(ui_text('within_30_days')) ?></span>
     </article>
 </section>
 
 <section class="content-grid">
     <article class="panel">
         <div class="panel-title">
-            <h2>Employees by Department</h2>
-            <span class="badge badge-info">Live Data</span>
+            <h2><?= h(ui_text('employees_by_department')) ?></h2>
+            <span class="badge badge-info"><?= h(ui_text('live_data')) ?></span>
         </div>
         <?php if (!$departmentCounts): ?>
-            <div class="empty-state"><p>No department data yet.</p></div>
+            <div class="empty-state"><p><?= h(ui_text('no_department_data')) ?></p></div>
         <?php else: ?>
         <div class="bar-chart" aria-label="Employees by department">
             <?php foreach ($departmentCounts as $row): ?>
@@ -72,11 +72,11 @@ require_once 'includes/header.php';
 
     <article class="panel">
         <div class="panel-title">
-            <h2>Verification Status</h2>
+            <h2><?= h(ui_text('verification_status')) ?></h2>
         </div>
         <?php $verified = max(0, $totalEmployees - $pendingVerification); ?>
         <div class="stat-card" style="box-shadow:none;">
-            <p>Verified Records</p>
+            <p><?= h(ui_text('verified_records')) ?></p>
             <strong><?= $totalEmployees ? round(($verified / $totalEmployees) * 100) : 0 ?>%</strong>
             <span><?= number_format($verified) ?> verified / <?= number_format($pendingVerification) ?> pending</span>
         </div>
@@ -85,9 +85,9 @@ require_once 'includes/header.php';
 
 <section class="content-grid">
     <article class="panel">
-        <div class="panel-title"><h2>Recent Activities</h2><a href="index.php" class="btn btn-sm btn-outline">View All</a></div>
+        <div class="panel-title"><h2><?= h(ui_text('recent_activities')) ?></h2><a href="<?= h(lang_url('index.php')) ?>" class="btn btn-sm btn-outline"><?= h(ui_text('view_all')) ?></a></div>
         <?php if (!$recentEmployees): ?>
-            <div class="empty-state"><p>No recent employee activity.</p></div>
+            <div class="empty-state"><p><?= h(ui_text('no_recent_activity')) ?></p></div>
         <?php else: ?>
         <ul class="activity-list">
             <?php foreach ($recentEmployees as $employee): ?>
@@ -104,19 +104,19 @@ require_once 'includes/header.php';
     </article>
 
     <article class="panel">
-        <div class="panel-title"><h2>Pending Approvals</h2><span class="badge badge-pending">High Priority</span></div>
+        <div class="panel-title"><h2><?= h(ui_text('pending_approvals')) ?></h2><span class="badge badge-pending"><?= h(ui_text('high_priority')) ?></span></div>
         <?php if (!$pendingRecords): ?>
-            <div class="empty-state"><p>No pending verification records.</p></div>
+            <div class="empty-state"><p><?= h(ui_text('no_pending_records')) ?></p></div>
         <?php else: ?>
         <div class="table-wrap">
             <table class="data-table">
-                <thead><tr><th>Subject</th><th>Department</th><th>Action</th></tr></thead>
+                <thead><tr><th><?= h(ui_text('subject')) ?></th><th><?= h(ui_text('department')) ?></th><th><?= h(ui_text('action')) ?></th></tr></thead>
                 <tbody>
                     <?php foreach ($pendingRecords as $record): ?>
                     <tr>
                         <td><?= h($record['family_name_latin'] . ' ' . $record['given_name_latin']) ?><br><span class="text-muted"><?= h($record['employee_code']) ?></span></td>
                         <td><?= h($record['department']) ?></td>
-                        <td><a class="btn btn-sm btn-outline" href="view.php?id=<?= (int) $record['id'] ?>">Review</a></td>
+                        <td><a class="btn btn-sm btn-outline" href="<?= h(lang_url('view.php?id=' . (int) $record['id'])) ?>"><?= h(ui_text('review')) ?></a></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
