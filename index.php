@@ -2,10 +2,11 @@
 require_once 'includes/auth.php';
 require_auth();
 require_once 'db.php';
-$pageTitle = 'Employee Management';
-$pageEyebrow = 'Portal / Employees';
-$pageActionHtml = '<a href="create.php" class="btn btn-primary"><span class="material-symbols-outlined">person_add</span>Add Employee</a>';
-require_once 'includes/header.php';
+require_once 'includes/helpers.php';
+
+$pageTitle = ui_text('employee_registry');
+$pageEyebrow = ui_text('portal') . ' / ' . ui_text('employees');
+$pageActionHtml = '<a href="' . h(lang_url('create.php')) . '" class="btn btn-primary"><span class="material-symbols-outlined">person_add</span>' . h(ui_text('add_employee')) . '</a>';
 
 $search = trim($_GET['search'] ?? '');
 $statusFilter = trim($_GET['status'] ?? '');
@@ -43,6 +44,14 @@ $successMsg = $_GET['success'] ?? '';
 $errorMsg   = $_GET['error']   ?? '';
 
 $statusOptions = ['Active','Inactive','Retired','Suspended','Transferred','Deceased'];
+$statusLabels = [
+    'Active' => ui_text('status_active'),
+    'Inactive' => ui_text('status_inactive'),
+    'Retired' => ui_text('status_retired'),
+    'Suspended' => ui_text('status_suspended'),
+    'Transferred' => ui_text('status_transferred'),
+    'Deceased' => ui_text('status_deceased'),
+];
 
 /**
  * Return a safe relative URL for a stored photo path.
@@ -62,6 +71,8 @@ function safePhotoSrc(?string $path): ?string {
 }
 ?>
 
+<?php require_once 'includes/header.php'; ?>
+
 <?php if ($successMsg !== ''): ?>
     <div class="alert alert-success"><?= htmlspecialchars($successMsg, ENT_QUOTES, 'UTF-8') ?></div>
 <?php endif; ?>
@@ -70,25 +81,26 @@ function safePhotoSrc(?string $path): ?string {
 <?php endif; ?>
 
 <form method="GET" class="search-form">
-    <input type="text" name="search" placeholder="Search by code, name, ID, phone, department…"
+    <input type="hidden" name="lang" value="<?= h(current_locale()) ?>">
+    <input type="text" name="search" placeholder="<?= h(ui_text('employee_search_placeholder')) ?>"
            value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>" class="form-control">
     <select name="status" class="form-control">
-        <option value="">All Statuses</option>
+        <option value=""><?= h(ui_text('all_statuses')) ?></option>
         <?php foreach ($statusOptions as $opt): ?>
             <option value="<?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>"
-                    <?= $statusFilter === $opt ? 'selected' : '' ?>><?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?></option>
+                    <?= $statusFilter === $opt ? 'selected' : '' ?>><?= h($statusLabels[$opt] ?? $opt) ?></option>
         <?php endforeach; ?>
     </select>
-    <button type="submit" class="btn btn-secondary">Search</button>
+    <button type="submit" class="btn btn-secondary"><?= h(ui_text('search')) ?></button>
     <?php if ($search !== '' || $statusFilter !== ''): ?>
-        <a href="index.php" class="btn btn-outline">Clear</a>
+        <a href="<?= h(lang_url('index.php')) ?>" class="btn btn-outline"><?= h(ui_text('clear')) ?></a>
     <?php endif; ?>
 </form>
 
 <?php if (empty($employees)): ?>
     <div class="empty-state">
-        <p>No employees found.</p>
-        <a href="create.php" class="btn btn-primary">Add First Employee</a>
+        <p><?= h(ui_text('no_employees_found')) ?></p>
+        <a href="<?= h(lang_url('create.php')) ?>" class="btn btn-primary"><?= h(ui_text('add_first_employee')) ?></a>
     </div>
 <?php else: ?>
 <div class="table-wrap">

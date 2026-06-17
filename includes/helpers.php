@@ -10,27 +10,45 @@ function normalize_locale(?string $locale): string {
 }
 
 function current_locale(): string {
+    static $resolvedLocale = null;
+
+    if ($resolvedLocale !== null) {
+        return $resolvedLocale;
+    }
+
+    $canSendHeaders = !headers_sent();
+    $sessionActive = session_status() === PHP_SESSION_ACTIVE;
+
     if (session_status() === PHP_SESSION_NONE) {
-        session_start();
+        if ($canSendHeaders) {
+            session_start();
+            $sessionActive = true;
+        }
     }
 
     if (isset($_GET['lang'])) {
         $locale = normalize_locale($_GET['lang']);
-        $_SESSION['ui_lang'] = $locale;
-        setcookie('govlink_lang', $locale, [
-            'expires' => time() + 31536000,
-            'path' => '/',
-            'httponly' => false,
-            'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (getenv('APP_ENV') === 'production'),
-            'samesite' => 'Lax',
-        ]);
+        if ($sessionActive) {
+            $_SESSION['ui_lang'] = $locale;
+        }
+        if ($canSendHeaders) {
+            setcookie('govlink_lang', $locale, [
+                'expires' => time() + 31536000,
+                'path' => '/',
+                'httponly' => false,
+                'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (getenv('APP_ENV') === 'production'),
+                'samesite' => 'Lax',
+            ]);
+        }
     }
 
-    if (empty($_SESSION['ui_lang']) && !empty($_COOKIE['govlink_lang'])) {
+    if ($sessionActive && empty($_SESSION['ui_lang']) && !empty($_COOKIE['govlink_lang'])) {
         $_SESSION['ui_lang'] = normalize_locale($_COOKIE['govlink_lang']);
     }
 
-    return normalize_locale($_SESSION['ui_lang'] ?? ($_COOKIE['govlink_lang'] ?? 'en'));
+    $sessionLocale = $sessionActive ? ($_SESSION['ui_lang'] ?? null) : null;
+    $resolvedLocale = normalize_locale($sessionLocale ?? ($_GET['lang'] ?? ($_COOKIE['govlink_lang'] ?? 'en')));
+    return $resolvedLocale;
 }
 
 function ui_text(string $key): string {
@@ -47,6 +65,12 @@ function ui_text(string $key): string {
             'deployment' => 'Deployment',
             'logout' => 'Logout',
             'search_placeholder' => 'Search records, documents, or reports...',
+            'employee_search_placeholder' => 'Search by code, name, ID, phone, department...',
+            'all_statuses' => 'All Statuses',
+            'search' => 'Search',
+            'clear' => 'Clear',
+            'no_employees_found' => 'No employees found.',
+            'add_first_employee' => 'Add First Employee',
             'language_toggle' => 'Khmer',
             'language_toggle_title' => 'Switch to Khmer',
             'generate_report' => 'Generate Report',
@@ -92,6 +116,57 @@ function ui_text(string $key): string {
             'edit' => 'Edit',
             'delete' => 'Delete',
             'profile' => 'Profile',
+            'personal' => 'Personal',
+            'address' => 'Address',
+            'id_documents' => 'ID Documents',
+            'identity' => 'Identity',
+            'employee_code' => 'Employee Code',
+            'officer_number' => 'Officer Number',
+            'civil_servant_number' => 'Civil Servant Number',
+            'national_id_number' => 'National ID Number',
+            'khmer_name' => 'Khmer Name',
+            'family_name_khmer' => 'Family Name (Khmer)',
+            'given_name_khmer' => 'Given Name (Khmer)',
+            'latin_name' => 'Latin Name',
+            'family_name_latin' => 'Family Name (Latin)',
+            'given_name_latin' => 'Given Name (Latin)',
+            'personal_details' => 'Personal Details',
+            'gender' => 'Gender',
+            'select_option' => 'Select',
+            'date_of_birth' => 'Date of Birth',
+            'nationality' => 'Nationality',
+            'phone' => 'Phone',
+            'employment' => 'Employment',
+            'position' => 'Position',
+            'profile_photo' => 'Profile Photo',
+            'photo_requirements' => 'Photo (JPG, PNG, GIF, WEBP - max 2 MB)',
+            'birthplace' => 'Birthplace',
+            'village' => 'Village',
+            'commune_sangkat' => 'Commune / Sangkat',
+            'district_khan' => 'District / Khan',
+            'province_capital' => 'Province / Capital',
+            'permanent_address' => 'Permanent Address',
+            'house_number' => 'House Number',
+            'street_number' => 'Street Number',
+            'id_document_note' => 'Record identification document details. Leave blank if not applicable.',
+            'government_officer_id_card' => 'Government Officer ID Card',
+            'khmer_national_identity_card' => 'Khmer National Identity Card',
+            'civil_servant_identity_card' => 'Civil Servant Identity Card',
+            'document_number' => 'Document Number',
+            'issue_date' => 'Issue Date',
+            'expiry_date' => 'Expiry Date',
+            'issuing_authority' => 'Issuing Authority',
+            'save_employee' => 'Save Employee',
+            'cancel' => 'Cancel',
+            'gender_male' => 'Male',
+            'gender_female' => 'Female',
+            'gender_other' => 'Other',
+            'status_active' => 'Active',
+            'status_inactive' => 'Inactive',
+            'status_retired' => 'Retired',
+            'status_suspended' => 'Suspended',
+            'status_transferred' => 'Transferred',
+            'status_deceased' => 'Deceased',
             'all_verified' => 'All employee records are currently verified.',
         ],
         'km' => [
@@ -106,6 +181,12 @@ function ui_text(string $key): string {
             'deployment' => 'ដាក់ដំណើរការ',
             'logout' => 'ចាកចេញ',
             'search_placeholder' => 'ស្វែងរកកំណត់ត្រា ឯកសារ ឬរបាយការណ៍...',
+            'employee_search_placeholder' => 'ស្វែងរកតាមលេខកូដ ឈ្មោះ អត្តសញ្ញាណ លេខទូរស័ព្ទ ឬនាយកដ្ឋាន...',
+            'all_statuses' => 'ស្ថានភាពទាំងអស់',
+            'search' => 'ស្វែងរក',
+            'clear' => 'សម្អាត',
+            'no_employees_found' => 'រកមិនឃើញបុគ្គលិកទេ។',
+            'add_first_employee' => 'បន្ថែមបុគ្គលិកដំបូង',
             'language_toggle' => 'English',
             'language_toggle_title' => 'ប្ដូរទៅភាសាអង់គ្លេស',
             'generate_report' => 'បង្កើតរបាយការណ៍',
@@ -151,6 +232,57 @@ function ui_text(string $key): string {
             'edit' => 'កែសម្រួល',
             'delete' => 'លុប',
             'profile' => 'ព័ត៌មានលម្អិត',
+            'personal' => 'ព័ត៌មានផ្ទាល់ខ្លួន',
+            'address' => 'អាសយដ្ឋាន',
+            'id_documents' => 'ឯកសារអត្តសញ្ញាណ',
+            'identity' => 'អត្តសញ្ញាណ',
+            'employee_code' => 'លេខកូដបុគ្គលិក',
+            'officer_number' => 'លេខមន្ត្រី',
+            'civil_servant_number' => 'លេខមន្ត្រីរាជការ',
+            'national_id_number' => 'លេខអត្តសញ្ញាណប័ណ្ណ',
+            'khmer_name' => 'ឈ្មោះជាភាសាខ្មែរ',
+            'family_name_khmer' => 'នាមត្រកូល (ខ្មែរ)',
+            'given_name_khmer' => 'នាមខ្លួន (ខ្មែរ)',
+            'latin_name' => 'ឈ្មោះជាឡាតាំង',
+            'family_name_latin' => 'នាមត្រកូល (ឡាតាំង)',
+            'given_name_latin' => 'នាមខ្លួន (ឡាតាំង)',
+            'personal_details' => 'ព័ត៌មានលម្អិតផ្ទាល់ខ្លួន',
+            'gender' => 'ភេទ',
+            'select_option' => 'ជ្រើសរើស',
+            'date_of_birth' => 'ថ្ងៃខែឆ្នាំកំណើត',
+            'nationality' => 'សញ្ជាតិ',
+            'phone' => 'លេខទូរស័ព្ទ',
+            'employment' => 'ការងារ',
+            'position' => 'មុខតំណែង',
+            'profile_photo' => 'រូបថតប្រវត្តិរូប',
+            'photo_requirements' => 'រូបថត (JPG, PNG, GIF, WEBP - អតិបរមា 2 MB)',
+            'birthplace' => 'ទីកន្លែងកំណើត',
+            'village' => 'ភូមិ',
+            'commune_sangkat' => 'ឃុំ / សង្កាត់',
+            'district_khan' => 'ស្រុក / ខណ្ឌ',
+            'province_capital' => 'ខេត្ត / រាជធានី',
+            'permanent_address' => 'អាសយដ្ឋានអចិន្ត្រៃយ៍',
+            'house_number' => 'លេខផ្ទះ',
+            'street_number' => 'លេខផ្លូវ',
+            'id_document_note' => 'កត់ត្រាព័ត៌មានឯកសារអត្តសញ្ញាណ។ ទុកឱ្យទទេ ប្រសិនបើមិនពាក់ព័ន្ធ។',
+            'government_officer_id_card' => 'ប័ណ្ណសម្គាល់មន្ត្រីរាជការ',
+            'khmer_national_identity_card' => 'អត្តសញ្ញាណប័ណ្ណសញ្ជាតិខ្មែរ',
+            'civil_servant_identity_card' => 'ប័ណ្ណសម្គាល់មន្ត្រីរាជការ',
+            'document_number' => 'លេខឯកសារ',
+            'issue_date' => 'កាលបរិច្ឆេទចេញ',
+            'expiry_date' => 'កាលបរិច្ឆេទផុតកំណត់',
+            'issuing_authority' => 'អាជ្ញាធរចេញឯកសារ',
+            'save_employee' => 'រក្សាទុកបុគ្គលិក',
+            'cancel' => 'បោះបង់',
+            'gender_male' => 'ប្រុស',
+            'gender_female' => 'ស្រី',
+            'gender_other' => 'ផ្សេងៗ',
+            'status_active' => 'សកម្ម',
+            'status_inactive' => 'អសកម្ម',
+            'status_retired' => 'ចូលនិវត្តន៍',
+            'status_suspended' => 'ផ្អាក',
+            'status_transferred' => 'ផ្ទេរ',
+            'status_deceased' => 'ទទួលមរណភាព',
             'all_verified' => 'កំណត់ត្រាបុគ្គលិកទាំងអស់បានផ្ទៀងផ្ទាត់រួចរាល់។',
         ],
     ];
